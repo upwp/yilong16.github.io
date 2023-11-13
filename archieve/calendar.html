@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Calendar</title>
+    <style>
+        pre {
+            white-space: pre-wrap;
+            /* Since CSS 2.1 */
+            white-space: -moz-pre-wrap;
+            /* Mozilla, since 1999 */
+            white-space: -pre-wrap;
+            /* Opera 4-6 */
+            white-space: -o-pre-wrap;
+            /* Opera 7 */
+            word-wrap: break-word;
+            /* Internet Explorer 5.5+ */
+        }
+
+        table {}
+
+        th {
+            background-color: #BEADFA;
+            width: 75px;
+            height: 50px;
+        }
+
+        td {
+            background-color: #D0BFFF;
+            box-sizing: border-box;
+
+            width: 100px;
+            height: 75px;
+            vertical-align: top;
+            padding: 5px;
+        }
+
+        td .num {
+            font-size: 14px;
+            text-align: right;
+            border-bottom: 2px solid #DFCCFB;
+        }
+
+        td .content {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div style="display: flex; justify-content: center;">
+        <!-- <div
+            style="text-align: center;background-color: #BEADFA;padding: 20px;border-width: 2.5px 0px 2.5px 2.5px;border-style: solid;border-color: white;">
+            Calendar</div> -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Sun</th>
+                    <th>Mon</th>
+                    <th>Tue</th>
+                    <th>Wed</th>
+                    <th>Thu</th>
+                    <th>Fri</th>
+                    <th>Sat</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</body>
+<script>
+    var url = "localhost";
+    generateTable();
+
+    function generateTable() {
+        var tbody = document.body.getElementsByTagName("tbody")[0];
+        var j = 1;
+        while (j < getLastDate()) {
+            var tr = document.createElement("tr");
+            for (var i = 0; i < 7; i++) {
+                if (j == 1 && i != getFirstDay() || j > getLastDate()) {
+                    var td = document.createElement("td");
+                    tr.appendChild(td);
+                    continue;
+                }
+                var td = document.createElement("td");
+                td.setAttribute("id", "date-" + j);
+                td.addEventListener("click", (e) => setCellContent(e.target.nodeName == "TD" ? e.target.id : e.target.parentNode.id, prompt("What?")));
+                var num = document.createElement("div");
+                num.classList.add("num");
+                num.innerHTML = j;
+                td.appendChild(num);
+                var content = document.createElement("pre");
+                content.classList.add("content");
+
+                td.appendChild(content);
+                tr.appendChild(td);
+                j++;
+            }
+            tbody.appendChild(tr);
+        }
+        insertData();
+    }
+
+    async function insertData() {
+        const data = await getDatabaseData();
+        data.forEach(item => {
+            document.getElementById("date-" + item.date).getElementsByClassName("content")[0].innerHTML = item.content;
+        });
+    }
+
+    function setCellContent(date, text) {
+        if (!text || !text.trim().length) { // empty check
+            return;
+        }
+        var content = document.getElementById(typeof date == 'number' ? "date-" + date : date).getElementsByClassName("content")[0];
+        content.innerHTML = text;
+        console.log("Last updated: " + Date.now());
+        postDatabaseData(typeof date == 'number' ? date : parseInt(date.replace("date-", "")), text);
+    }
+
+    function getFirstDay() {
+        var date = new Date();
+        var firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+        return firstDay.getDay();
+    }
+
+    function getLastDay() {
+        var date = new Date();
+        var lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+        return lastDay.getDay();
+    }
+
+    function getLastDate() {
+        var date = new Date();
+        var lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+        return lastDay.getDate();
+    }
+
+    async function getDatabaseData() {
+        return new Promise((resolve, reject) => {
+            var xml = new XMLHttpRequest();
+            xml.open("GET", `http://${url}/data.json`, true);
+            xml.send(null);
+            xml.onreadystatechange = (() => {
+                if (xml.readyState == 4 && xml.status == 200) {
+                    data = JSON.parse(xml.responseText);
+                    resolve(data);
+                }
+            })
+        })
+    }
+
+    function postDatabaseData(date, text) {
+        var object =
+        {
+            "date": date,
+            "title": "",
+            "content": text,
+            "modifiedTime": Date.now(),
+            "editedTime": Date.now()
+        }
+        var xml = new XMLHttpRequest();
+        xml.open("POST", `http://${url}`, true);
+        xml.send(JSON.stringify(object));
+        xml.onreadystatechange = (() => {
+            if (xml.readyState == 4 && xml.status == 200) {
+                data = JSON.parse(xml.responseText);
+                resolve(data);
+            }
+        })
+    }
+
+    function login(username, password) {
+        var object = {
+            "usrname": username,
+            "pwd": password
+        }
+        var url = "https://recreate-api.yi-long.repl.co/verify";
+        var xml = new XMLHttpRequest();
+        xml.withCredentials = true;
+        xml.open("POST", url, true);
+
+        xml.send(JSON.stringify(object));
+        xml.onreadystatechange = (() => {
+            if (xml.readyState == 4 && xml.status == 200) {
+                data = JSON.parse(xml.responseText);
+            }
+            console.log(document.cookie);
+        })
+    }
+</script>
+
+</html>

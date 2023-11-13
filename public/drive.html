@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="../script/drive.js"></script>
+
+    <script>
+        var filePath = "";
+
+        update();
+        function update(f = "") {
+            filePath += f;
+            console.log(filePath);
+            getDriveData(f).then(data => {
+                console.log(data);
+                document.getElementById("files").innerHTML = data.files.map(file => {
+                    return `<div onclick="showFile('${filePath + "/" + file}')">${file}</div>`
+                }).join("");
+                document.getElementById("folders").innerHTML = data.folders.map(file => {
+                    return `<div onclick="update('/${file}')">${file}</div>`
+                }).join("");
+            });
+        }
+
+        function showFile(f) {
+            getDriveRawData(f).then(data => {
+                if (f.endsWith(".png")) {
+                    console.log("PNG ???");
+                    return;
+                };
+                document.getElementById("content").innerHTML = data;
+            })
+        };
+    </script>
+</head>
+
+<body>
+    <div>
+        <h4>Files: </h4>
+        <div id="files"></div>
+        <h4>Folders: </h4>
+        <div id="folders"></div>
+        <h4>Content: </h4>
+        <div id="content"></div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,361 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>Admin Only</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --color: #E5E0FF;
+            --button-color: #B1B2FF;
+            --button-color-active: #9495eb;
+            --em: 16px;
+            --half-em: 8px;
+            --half-half-em: 4px;
+            --border-radius: 2.5px;
+        }
+
+        * {
+            margin: 0;
+            font-family: IBM Plex Sans, Roboto, system-ui, sans-serif;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: var(--half-em);
+            border: 2px solid rgb(180, 180, 180);
+            border-radius: var(--border-radius);
+        }
+
+        input[type=button] {
+            background-color: var(--button-color);
+            color: white;
+            border: none;
+        }
+
+        input[type=button]:active {
+            background-color: var(--button-color-active);
+        }
+
+        label {
+            font-size: smaller;
+            color: rgb(80, 80, 80);
+            margin-bottom: 2.5px;
+        }
+
+        .white {
+            color: white;
+        }
+
+        .center-web {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .center {
+            display: flex;
+            justify-content: center;
+        }
+
+        .form-container {
+            width: 14em;
+            background-color: var(--color);
+            padding: var(--half-em);
+            border-radius: var(--border-radius);
+        }
+
+        .form-container input:focus:not(input[type=button]) {
+            outline: 2px solid rgb(81, 211, 103);
+            border: 2px solid rgb(82, 226, 106);
+        }
+
+        .bottom {
+            margin-top: var(--half-em);
+        }
+
+        .layout-row {
+            display: flex;
+        }
+
+        .layout-column {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .outside-container {
+            background-color: #cbc4f1;
+            padding: var(--half-em);
+            border-radius: var(--border-radius);
+        }
+
+        .container {
+            background-color: #E5E0FF;
+            padding: var(--half-em);
+            border-radius: var(--border-radius);
+        }
+
+        .background-profile-img {
+            background-color: #E5E0FF;
+            width: 128px;
+            height: 128px;
+            border-radius: var(--border-radius);
+        }
+
+        .profile-img {
+            background: url("");
+            width: 128px;
+            height: 128px;
+        }
+
+        a {
+            display: flex;
+            gap: var(--half-half-em);
+            max-width: fit-content;
+            cursor: pointer;
+        }
+
+        footer {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            padding: var(--half-em);
+            text-align: right;
+            font-size: smaller;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="center-web">
+        <div class="form-container" id="login">
+            <div class="center">
+                <h3 style="color:#3F4D5A;">Login</h3>
+            </div>
+            <div>
+                <div><label>Username</label><input type="text" id="username"></div>
+                <div><label>Password</label><input type="password" id="password"></div>
+            </div>
+            <div style="margin-top: var(--half-em)">
+                <input type="button" value="Login" onclick="verifyForm()" id="submit"></input>
+            </div>
+        </div>
+        <div class="outside-container" id="user-info">
+            <div class="container">
+                <div>
+                    <h3>User Info</h3>
+                </div>
+                <div class="layout-row bottom">
+                    <div class="background-profile-img"><img class="profile-img"></div>
+                    <div class="layout-column" style="justify-content: space-between;padding: var(--half-em);">
+                        <div>
+                            <label>Username</label>
+                            <div style="font-weight:500;" id="username">-</div>
+                            <label>Created Date</label>
+                            <div style="font-weight:500;" id="created_at">-</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bottom">
+                    <input type="button" value="Sign out" id="signout" onclick="signout()">
+                </div>
+            </div>
+            <div class="container bottom">
+                <h4>Service</h4>
+                <div class="bottom" style="font-size: small;gap:var(--half-half-em);display: grid;">
+                    <a>Calendar<img src="/assets/icon/new-tab.svg"></a>
+                    <a>Drive<img src="/assets/icon/new-tab.svg"></a>
+                    <a>Game<img src="/assets/icon/new-tab.svg"></a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer>
+        <div id="data"></div>
+    </footer>
+</body>
+
+<head>
+    <script>
+        const serverURL = "http://localhost";
+        let loadingInterval;
+        var nameInput = document.querySelector("#login #username");
+        var pwdInput = document.querySelector("#login #password");
+        process();
+
+        function loginPageKeyRegister() {
+            nameInput.addEventListener("keypress", (event) => {
+                if (event.key == "Enter") {
+                    nameInput.blur();
+                    verifyForm();
+                }
+            });
+            pwdInput.addEventListener("keypress", (event) => {
+                if (event.key == "Enter") {
+                    pwdInput.blur();
+                    verifyForm();
+                }
+            });
+        }
+
+        function verifyForm() {
+            let name = nameInput.value;
+            let pwd = pwdInput.value;
+            if (!name) {
+                nameInput.focus();
+                return;
+            }
+            if (!pwd) {
+                pwdInput.focus();
+                return;
+            }
+            login(name, pwd);
+        }
+
+        function send(dir, options = {
+            method: "GET",
+            d: null
+        }, callback = (res) => res.json()) {
+            startLoadingAnimation();
+            if (typeof options == "function") {
+                callback = options;
+            }
+            return fetch(serverURL + dir, {
+                method: options.method,
+                credentials: "include",
+                body: options.d
+            }).then(callback).catch(err => console.error(err));
+        }
+
+        function login(name, pwd) {
+            send("/user/login", {
+                method: "POST",
+                d: `username=${name}&password=${pwd}`
+            }) // cautious: server need verify the data
+                .then(data => {
+                    // if login failed then show error message
+                    // need to be completed
+                    if (data.status != "Success") {
+                        visibleLog(`${data.status}, Trying to login again...`);
+                        setTimeout(() => {
+                            loginScreen();
+                        }, 1000);
+                    } else {
+                        visibleLog(JSON.stringify(data.data));
+                        setTimeout(() => {
+                            userInfoScreen(data.data);
+                        }, 1000);
+                    }
+                });
+        }
+
+        function createAccount(name, pwd) {
+            send("/user/create", {
+                method: "POST",
+                d: `username=${name}&password=${pwd}`
+            }) // cautious: server need verify the data
+                .then(data => {
+                    visibleLog(JSON.stringify(data, null, 2));
+                });
+        }
+
+        function getUserData() {
+            // if (parseCookies(document.cookie)["sessionId"]) {
+            send("/user", {
+                method: "POST",
+                d: null
+            }).then(data => {
+                if (data.status != "Success") {
+                    visibleLog(`${data.status}, Trying to login again...`);
+                    setTimeout(() => {
+                        loginScreen();
+                    }, 1000);
+                } else {
+                    visibleLog(JSON.stringify(data.data));
+                    setTimeout(() => {
+                        userInfoScreen(data.data);
+                    }, 1000);
+                }
+            });
+            // } else {
+            //     visibleLog("Trying to login again...");
+            //     setTimeout(() => {
+            //         loginScreen();
+            //     }, 1000);
+            // }
+        }
+
+        function getUserStorage() {
+            send("/drive", {
+                method: "POST",
+                d: null
+            }).then(data => {
+                visibleLog(JSON.stringify(data, null, 2));
+            });
+        }
+
+        function parseCookies(cookieHeader) {
+            let cookies = {};
+            cookieHeader.split(';').forEach(cookie => {
+                let [name, value] = cookie.split('=').map(v => v.trim());
+                cookies[name] = value;
+            });
+            return cookies;
+        }
+
+        function startLoadingAnimation() {
+            let loadingElement = document.getElementById("submit");
+            let dots = "";
+            loadingInterval = setInterval(() => {
+                dots = dots.length < 3 ? dots + '.' : ' ';
+                loadingElement.value = dots;
+            }, 500);
+        }
+
+        function stopLoadingAnimation() {
+            clearInterval(loadingInterval);
+            document.getElementById("submit").value = 'Login';
+        }
+        loginPageKeyRegister(); // need to be called because always use
+        function loginScreen() {
+            stopLoadingAnimation();
+            document.getElementById("login").style.display = "block";
+            document.getElementById("user-info").style.display = "none";
+        }
+
+        function userInfoScreen(data) {
+            stopLoadingAnimation();
+            document.getElementById("login").style.display = "none";
+            document.getElementById("user-info").style.display = "block";
+            document.querySelector("#user-info #username").innerHTML = data.username;
+            document.querySelector("#user-info #created_at").innerHTML = new Date(data.created_at).toLocaleString();
+        }
+
+        function visibleLog(msg) {
+            document.getElementById("data").innerHTML = msg;
+        }
+
+        function signout() {
+            loginScreen();
+        }
+
+        function process() {
+            loginScreen();
+            getUserData();
+        }
+    </script>
+</head>
+
+</html>

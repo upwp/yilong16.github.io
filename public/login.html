@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+    <script src="../script/user.js"></script>
+</head>
+
+<body>
+    <form>
+        <h2>Login</h2>
+        <input type="text" placeholder="Username" id="username">
+        <input type="password" placeholder="Password" id="password">
+        <input type="submit" value="Login" id="submit">
+    </form>
+    <script>
+        document.getElementById("submit").addEventListener("click", function (event) {
+            event.preventDefault()
+            var username = document.getElementById("username").value;
+            var password = document.getElementById("password").value;
+            login(username, password).then(data => {
+                console.log(data)
+                if (data.status == "ok") {
+                    if (window.history.length > 1 && window.location.href.startsWith("http://127.0.0.1:5500")) {
+                        window.history.back();
+                    } else {
+                        window.location.href = "../index.html";
+                    }
+                } else {
+                    alert(data.status);
+                }
+            })
+        })
+    </script>
+</body>
+
+</html>
